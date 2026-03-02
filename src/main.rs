@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
+use anyhow::{Ok, Result};
 use clap::{Parser, Subcommand};
+use serde::{Deserialize, Serialize};
 
 #[derive(Subcommand, Debug)]
 enum Commands {
@@ -21,7 +23,7 @@ struct Cli {
     command: Commands,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Init(args) => init(args),
@@ -29,15 +31,37 @@ fn main() {
         Commands::Remove(args) => remove(args),
         Commands::Fetch(args) => fetch(args),
         Commands::List(args) => list(args),
-    }
+    }?;
+    Ok(())
 }
 
 #[derive(Parser, Debug)]
 #[command(about = "Initialize a new project")]
 struct Init {
+    project: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ProjectConfig {
     name: String,
-    #[arg(short, long, default_value = "")]
-    output: Option<PathBuf>,
+    authors: Vec<String>,
+    version: String,
+    description: Option<String>,
+    workspace: Vec<PathBuf>,
+    dependencies: DependencyConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+
+struct DependencyConfig {
+    dev: Option<Vec<Dependency>>,
+    dependencies: Option<Vec<Dependency>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Dependency {
+    name: String,
+    version: String,
 }
 
 #[derive(Parser, Debug)]
@@ -66,26 +90,26 @@ struct List {
     package: Option<String>,
 }
 
-fn init(args: Init) {
-    println!(
-        "Initializing project {} in {}",
-        args.name,
-        args.output.unwrap().display()
-    );
+fn init(args: Init) -> Result<()> {
+    Ok(())
 }
 
-fn add(args: Add) {
+fn add(args: Add) -> Result<()> {
     println!("Adding {}", args.package);
+    Ok(())
 }
 
-fn remove(args: Remove) {
+fn remove(args: Remove) -> Result<()> {
     println!("Removing {}", args.package);
+    Ok(())
 }
 
-fn fetch(_args: Fetch) {
+fn fetch(_args: Fetch) -> Result<()> {
     println!("Fetching data");
+    Ok(())
 }
 
-fn list(args: List) {
+fn list(args: List) -> Result<()> {
     println!("Listing WIT items (all = {})", args.all);
+    Ok(())
 }
