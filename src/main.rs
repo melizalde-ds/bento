@@ -37,19 +37,20 @@ fn main() {
 struct Init {
     name: String,
     #[arg(short, long, default_value = "")]
-    output: PathBuf,
+    output: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
 #[command(about = "Add a new WIT item")]
 struct Add {
-    name: String,
+    /// Package in namespace:name@version format (e.g. wasi:http@0.2.3)
+    package: String,
 }
 
 #[derive(Parser, Debug)]
 #[command(about = "Remove a WIT item")]
 struct Remove {
-    name: String,
+    package: String,
 }
 
 #[derive(Parser, Debug)]
@@ -59,24 +60,26 @@ struct Fetch;
 #[derive(Parser, Debug)]
 #[command(about = "List WIT items")]
 struct List {
-    #[arg(short, long, default_value_t = true)]
+    #[arg(short, long)]
     all: bool,
+
+    package: Option<String>,
 }
 
 fn init(args: Init) {
     println!(
         "Initializing project {} in {}",
         args.name,
-        args.output.display()
+        args.output.unwrap().display()
     );
 }
 
 fn add(args: Add) {
-    println!("Adding {}", args.name);
+    println!("Adding {}", args.package);
 }
 
 fn remove(args: Remove) {
-    println!("Removing {}", args.name);
+    println!("Removing {}", args.package);
 }
 
 fn fetch(_args: Fetch) {
