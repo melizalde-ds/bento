@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::{Ok, Result, bail};
+use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +37,10 @@ fn main() -> Result<()> {
 #[derive(Parser, Debug)]
 #[command(about = "Initialize a new project")]
 struct Init {
+    #[arg(
+        value_name = "NAME",
+        help = "Project name; use '.' to use the current directory name"
+    )]
     project: Option<String>,
 }
 
