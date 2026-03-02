@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Add,
+    Add(Add),
     List,
     Remove,
 }
@@ -19,5 +19,19 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    println!("{:?}", cli);
+    match cli.command {
+        Commands::Add(args) => add(args),
+        Commands::List => println!("Listing items"),
+        Commands::Remove => println!("Removing item"),
+    }
+}
+
+#[derive(Parser, Debug)]
+#[command(about = "Add a new item")]
+struct Add {
+    name: String,
+}
+
+fn add(args: Add) {
+    println!("Adding {}", args.name);
 }
