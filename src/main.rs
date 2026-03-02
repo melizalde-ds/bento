@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
+use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
+use serde::{Deserialize, Serialize};
 
 #[derive(Subcommand, Debug)]
 enum Commands {
@@ -21,7 +23,7 @@ struct Cli {
     command: Commands,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Init(args) => init(args),
@@ -35,9 +37,38 @@ fn main() {
 #[derive(Parser, Debug)]
 #[command(about = "Initialize a new project")]
 struct Init {
+    #[arg(
+        value_name = "NAME",
+        help = "Project name; use '.' to use the current directory name"
+    )]
+    project: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ProjectConfig {
+    project: Project,
+    dependencies: DependencyConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Project {
     name: String,
-    #[arg(short, long, default_value = "")]
-    output: Option<PathBuf>,
+    version: String,
+    description: Option<String>,
+    author: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+
+struct DependencyConfig {
+    dev: Option<Vec<Dependency>>,
+    dependencies: Option<Vec<Dependency>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Dependency {
+    name: String,
+    version: String,
 }
 
 #[derive(Parser, Debug)]
@@ -66,26 +97,58 @@ struct List {
     package: Option<String>,
 }
 
-fn init(args: Init) {
-    println!(
-        "Initializing project {} in {}",
-        args.name,
-        args.output.unwrap().display()
-    );
+fn init(args: Init) -> Result<()> {
+    let project_name = match args.project.as_deref() {
+        None | Some(".") => {
+            let current_dir = std::env::current_dir()?;
+            let dir_name = current_dir.file_name();
+            match dir_name {
+                Some(name) => name.to_string_lossy().to_string(),
+                _ => bail!("Could not determine project name from current directory"),
+            }
+        }
+        Some(name) => name.to_string(),
+    };
+    init_project(&project_name)
 }
 
-fn add(args: Add) {
+fn init_project(project: &str) -> Result<()> {
+    if PathBuf::from("bento.toml").exists() {
+        bail!("Project already initialized in this directory");
+    }
+    let content = toml::to_string(&ProjectConfig {
+        project: Project {
+            name: project.to_string(),
+            version: "0.1.0".to_string(),
+            description: None,
+            author: "Author Name".to_string(),
+        },
+        dependencies: DependencyConfig {
+            dev: None,
+            dependencies: None,
+        },
+    })?;
+    std::fs::write("bento.toml", &content)?;
+    println!("Initialized new project:\n{}", content);
+    Ok(())
+}
+
+fn add(args: Add) -> Result<()> {
     println!("Adding {}", args.package);
+    Ok(())
 }
 
-fn remove(args: Remove) {
+fn remove(args: Remove) -> Result<()> {
     println!("Removing {}", args.package);
+    Ok(())
 }
 
-fn fetch(_args: Fetch) {
+fn fetch(_args: Fetch) -> Result<()> {
     println!("Fetching data");
+    Ok(())
 }
 
-fn list(args: List) {
+fn list(args: List) -> Result<()> {
     println!("Listing WIT items (all = {})", args.all);
+    Ok(())
 }
