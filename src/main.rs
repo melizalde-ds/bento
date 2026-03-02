@@ -42,12 +42,16 @@ struct Init {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct ProjectConfig {
+    project: Project,
+    dependencies: DependencyConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Project {
     name: String,
-    authors: Vec<String>,
     version: String,
     description: Option<String>,
-    workspace: Vec<PathBuf>,
-    dependencies: Option<DependencyConfig>,
+    author: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -106,12 +110,16 @@ fn init(args: Init) -> Result<()> {
 
 fn init_project(project: &str) -> Result<()> {
     let content = toml::to_string(&ProjectConfig {
-        name: project.to_string(),
-        authors: vec!["".to_string()],
-        version: "0.1.0".to_string(),
-        description: None,
-        workspace: vec![],
-        dependencies: None,
+        project: Project {
+            name: project.to_string(),
+            version: "0.1.0".to_string(),
+            description: None,
+            author: "Author Name".to_string(),
+        },
+        dependencies: DependencyConfig {
+            dev: None,
+            dependencies: None,
+        },
     })?;
     std::fs::write("bento.toml", content)?;
     println!("Initialized project '{}'", project);
