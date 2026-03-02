@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::{Ok, Result};
+use anyhow::{Ok, Result, bail};
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
@@ -31,8 +31,7 @@ fn main() -> Result<()> {
         Commands::Remove(args) => remove(args),
         Commands::Fetch(args) => fetch(args),
         Commands::List(args) => list(args),
-    }?;
-    Ok(())
+    }
 }
 
 #[derive(Parser, Debug)]
@@ -48,7 +47,7 @@ struct ProjectConfig {
     version: String,
     description: Option<String>,
     workspace: Vec<PathBuf>,
-    dependencies: DependencyConfig,
+    dependencies: Option<DependencyConfig>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -91,6 +90,31 @@ struct List {
 }
 
 fn init(args: Init) -> Result<()> {
+    let project_name = match args.project.as_deref() {
+        None | Some(".") => {
+            let current_dir = std::env::current_dir()?;
+            let dir_name = current_dir.file_name();
+            match dir_name {
+                Some(name) => name.to_string_lossy().to_string(),
+                _ => bail!("Could not determine project name from current directory"),
+            }
+        }
+        Some(name) => name.to_string(),
+    };
+    init_project(&project_name)
+}
+
+fn init_project(project: &str) -> Result<()> {
+    let content = toml::to_string(&ProjectConfig {
+        name: project.to_string(),
+        authors: vec!["".to_string()],
+        version: "0.1.0".to_string(),
+        description: None,
+        workspace: vec![],
+        dependencies: None,
+    })?;
+    std::fs::write("bento.toml", content)?;
+    println!("Initialized project '{}'", project);
     Ok(())
 }
 
