@@ -109,6 +109,9 @@ fn init(args: Init) -> Result<()> {
 }
 
 fn init_project(project: &str) -> Result<()> {
+    if PathBuf::from("bento.toml").exists() {
+        bail!("Project already initialized in this directory");
+    }
     let content = toml::to_string(&ProjectConfig {
         project: Project {
             name: project.to_string(),
@@ -121,8 +124,8 @@ fn init_project(project: &str) -> Result<()> {
             dependencies: None,
         },
     })?;
-    std::fs::write("bento.toml", content)?;
-    println!("Initialized project '{}'", project);
+    std::fs::write("bento.toml", &content)?;
+    println!("Initialized new project:\n{}", content);
     Ok(())
 }
 
