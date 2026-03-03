@@ -1,27 +1,12 @@
+mod cli;
+mod config;
+
 use std::path::PathBuf;
 
 use anyhow::{Result, bail};
-use clap::{Parser, Subcommand};
-use serde::{Deserialize, Serialize};
+use clap::Parser;
 
-#[derive(Subcommand, Debug)]
-enum Commands {
-    Init(Init),
-    Add(Add),
-    Remove(Remove),
-    Fetch(Fetch),
-    List(List),
-}
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[arg(short, long, global = true)]
-    verbose: bool,
-
-    #[command(subcommand)]
-    command: Commands,
-}
+use cli::{Cli, Commands};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -34,70 +19,7 @@ fn main() -> Result<()> {
     }
 }
 
-#[derive(Parser, Debug)]
-#[command(about = "Initialize a new project")]
-struct Init {
-    #[arg(
-        value_name = "NAME",
-        help = "Project name; use '.' to use the current directory name"
-    )]
-    project: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct ProjectConfig {
-    project: Project,
-    dependencies: DependencyConfig,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct Project {
-    name: String,
-    version: String,
-    description: Option<String>,
-    author: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-
-struct DependencyConfig {
-    dev: Option<Vec<Dependency>>,
-    dependencies: Option<Vec<Dependency>>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct Dependency {
-    name: String,
-    version: String,
-}
-
-#[derive(Parser, Debug)]
-#[command(about = "Add a new WIT item")]
-struct Add {
-    /// Package in namespace:name@version format (e.g. wasi:http@0.2.3)
-    package: String,
-}
-
-#[derive(Parser, Debug)]
-#[command(about = "Remove a WIT item")]
-struct Remove {
-    package: String,
-}
-
-#[derive(Parser, Debug)]
-#[command(about = "Fetch data from a source")]
-struct Fetch;
-
-#[derive(Parser, Debug)]
-#[command(about = "List WIT items")]
-struct List {
-    #[arg(short, long)]
-    all: bool,
-
-    package: Option<String>,
-}
-
-fn init(args: Init) -> Result<()> {
+fn init(args: cli::Init) -> Result<()> {
     let project_name = match args.project.as_deref() {
         None | Some(".") => {
             let current_dir = std::env::current_dir()?;
@@ -116,39 +38,38 @@ fn init_project(project: &str) -> Result<()> {
     if PathBuf::from("bento.toml").exists() {
         bail!("Project already initialized in this directory");
     }
-    let content = toml::to_string(&ProjectConfig {
-        project: Project {
+
+    let content = toml::to_string(&config::ProjectConfig {
+        project: config::Project {
             name: project.to_string(),
             version: "0.1.0".to_string(),
             description: None,
             author: "Author Name".to_string(),
         },
-        dependencies: DependencyConfig {
-            dev: None,
-            dependencies: None,
-        },
+        dependencies: config::DependencyConfig { dependencies: None },
     })?;
+
     std::fs::write("bento.toml", &content)?;
     println!("Initialized new project:\n{}", content);
     Ok(())
 }
 
-fn add(args: Add) -> Result<()> {
+fn add(args: cli::Add) -> Result<()> {
     println!("Adding {}", args.package);
     Ok(())
 }
 
-fn remove(args: Remove) -> Result<()> {
+fn remove(args: cli::Remove) -> Result<()> {
     println!("Removing {}", args.package);
     Ok(())
 }
 
-fn fetch(_args: Fetch) -> Result<()> {
+fn fetch(_args: cli::Fetch) -> Result<()> {
     println!("Fetching data");
     Ok(())
 }
 
-fn list(args: List) -> Result<()> {
+fn list(args: cli::List) -> Result<()> {
     println!("Listing WIT items (all = {})", args.all);
     Ok(())
 }
