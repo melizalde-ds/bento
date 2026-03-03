@@ -54,7 +54,9 @@ pub struct Fetch {
 #[derive(Parser, Debug)]
 #[command(about = "List WIT items")]
 pub struct List {
-    #[arg(short, long)]
-    pub all: bool,
+    #[arg(
+        value_name = "PACKAGE",
+        help = "Optional package name to filter the list"
+    )]
     pub package: Option<String>,
 }

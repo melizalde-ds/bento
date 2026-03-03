@@ -3,17 +3,22 @@ use std::{collections::BTreeMap, path::PathBuf};
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
-const CONFIG_FILE: &str = "bento.toml";
+const MANIFEST_FILE: &str = "bento.toml";
 
 pub type DependencySection = BTreeMap<String, DependencySpec>;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ProjectConfig {
-    pub project: Project,
-    pub dependencies: Option<DependencySection>,
+pub struct Manifest {
+    pub project: ProjectMetadata,
+    pub dependencies: DependencyTable,
 }
 
-impl ProjectConfig {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DependencyTable {
+    pub packages: Option<DependencySection>,
+}
+
+impl Manifest {
     pub fn load() -> anyhow::Result<Self> {
         if !PathBuf::from("bento.toml").exists() {
             bail!(
@@ -21,19 +26,19 @@ impl ProjectConfig {
             );
         }
 
-        let content = std::fs::read_to_string(CONFIG_FILE)?;
+        let content = std::fs::read_to_string(MANIFEST_FILE)?;
         let config: Self = toml::from_str(&content)?;
         Ok(config)
     }
     pub fn save(&self) -> anyhow::Result<()> {
         let content = toml::to_string(self)?;
-        std::fs::write(CONFIG_FILE, content)?;
+        std::fs::write(MANIFEST_FILE, content)?;
         Ok(())
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Project {
+pub struct ProjectMetadata {
     pub name: String,
     pub version: String,
     pub description: Option<String>,

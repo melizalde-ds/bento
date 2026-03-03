@@ -4,20 +4,29 @@ use crate::config::DependencySection;
 use crate::config::DependencySpec;
 use anyhow::Result;
 
-pub fn run(_args: cli::List) -> Result<()> {
-    let config = config::ProjectConfig::load()?;
+pub fn run(args: cli::List) -> Result<()> {
+    let config = config::Manifest::load()?;
     println!(
         "Project: {} v{}",
         config.project.name, config.project.version
     );
-    match config.dependencies {
-        Some(deps) => list_all_dependencies(deps),
-        None => println!("No dependencies found"),
+    let dependencies = match config.dependencies.packages {
+        Some(dependencies) => dependencies,
+        None => {
+            println!("No dependencies found");
+            return Ok(());
+        }
+    };
+
+    match args.package {
+        None => list_all_dependencies(&dependencies),
+        Some(name) => find_dependency(&dependencies, &name),
     }
+
     Ok(())
 }
 
-fn list_all_dependencies(dependencies: DependencySection) {
+fn list_all_dependencies(dependencies: &DependencySection) {
     if dependencies.is_empty() {
         println!("No dependencies found");
         return;
@@ -30,4 +39,16 @@ fn list_all_dependencies(dependencies: DependencySection) {
             }
         }
     }
+}
+
+fn find_dependency(dependencies: &DependencySection, name: &str) {
+    match dependencies.get(name) {
+        Some(spec) => match spec {
+            DependencySpec::Simple(version) => println!("{}: {}", name, version),
+            DependencySpec::Detailed { version, features } => {
+                println!("{}: {} features={:?}", name, version, features);
+            }
+        },
+        None => println!("Dependency '{}' not found", name),
+    };
 }

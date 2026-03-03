@@ -23,14 +23,14 @@ fn init_project(project: &str) -> Result<()> {
         bail!("Project already initialized in this directory");
     }
 
-    let content = config::ProjectConfig {
-        project: config::Project {
+    let content = config::Manifest {
+        project: config::ProjectMetadata {
             name: project.to_string(),
             version: "0.1.0".to_string(),
             description: None,
             author: "Author Name".to_string(),
         },
-        dependencies: None,
+        dependencies: config::DependencyTable { packages: None },
     };
     content.save()?;
     println!("Initialized project '{}'", project);
