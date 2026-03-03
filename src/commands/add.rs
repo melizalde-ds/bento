@@ -1,7 +1,12 @@
-use crate::cli;
+use crate::{cli, config::Manifest, resolver::Resolver};
 use anyhow::Result;
 
 pub fn run(args: cli::Add) -> Result<()> {
-    println!("Adding {}", args.package);
+    let packages = args.package;
+    for package in packages {
+        Resolver::verify(&package)?;
+        println!("Adding package: {}", package);
+    }
+    let _config = Manifest::load()?;
     Ok(())
 }
