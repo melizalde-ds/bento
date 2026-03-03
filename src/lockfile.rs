@@ -2,7 +2,10 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt::Display, path::PathBuf};
 
-use crate::config::{DependencyKey, DependencyTable};
+use crate::{
+    config::{DependencyKey, DependencySpec, DependencyTable},
+    resolver::Resolver,
+};
 
 const LOCKFILE_NAME: &str = "bento.lock";
 
@@ -23,13 +26,7 @@ pub struct LockfileEntry {
 
 impl LockfileKey {
     pub fn verify(&self) -> Result<()> {
-        let re = regex::Regex::new(
-            r"^[a-zA-Z][a-zA-Z0-9_-]*:[a-zA-Z][a-zA-Z0-9_-]*@[0-9]+\.[0-9]+\.[0-9]+$",
-        )?;
-        if !re.is_match(&self.0) {
-            anyhow::bail!("Invalid package format: {}", self.0);
-        }
-        Ok(())
+        Resolver::package_verify(&self.0)
     }
 }
 
@@ -85,7 +82,7 @@ impl Lockfile {
         self.packages.contains_key(&LockfileKey::from(package))
     }
 
-    pub fn sync(&self, configuration: &DependencyTable) -> Result<()> {
+    pub fn sync(&mut self, configuration: &DependencyTable, add: bool) -> Result<()> {
         let packages = match &configuration.packages {
             None => {
                 if self.packages.is_empty() {
@@ -98,26 +95,32 @@ impl Lockfile {
             }
             Some(packages) => packages,
         };
-        for package in packages.keys() {
-            let lockfile_key = LockfileKey::from(package);
-            if !self.packages.contains_key(&lockfile_key) {
+
+        for (key, spec) in packages {
+            let lockfile_key = to_lockfile_key(key, spec)?;
+            let contains_key = self.packages.contains_key(&lockfile_key);
+            if !contains_key && !add {
                 bail!(
-                    "Lockfile is missing package '{}' specified in configuration. Lockfile is out of sync with configuration.",
-                    package
+                    "Lockfile appears to be corrupted. Missing entry for package '{}'",
+                    lockfile_key
+                );
+            } else if !contains_key {
+                println!("Adding '{}' to lockfile", lockfile_key);
+                self.packages.insert(
+                    lockfile_key,
+                    LockfileEntry {
+                        source: "unknown".to_string(),
+                        checksum: "unknown".to_string(),
+                        dependencies: vec![],
+                    },
                 );
             }
         }
-        Ok(())
+
+        self.save()
     }
 }
 
-impl From<&DependencyKey> for LockfileKey {
-    fn from(value: &DependencyKey) -> Self {
-        let string = value.to_string();
-        let split = string.split(" = ").collect::<Vec<&str>>();
-        if split.len() != 2 {
-            panic!("Invalid dependency key format: {}", string);
-        }
-        LockfileKey(format!("{}@{}", split[0], split[1]))
-    }
+fn to_lockfile_key(key: &DependencyKey, spec: &DependencySpec) -> Result<LockfileKey> {
+    Ok(LockfileKey::from(format!("{}@{}", key, spec).as_str()))
 }

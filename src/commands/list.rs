@@ -34,7 +34,7 @@ fn list_all_dependencies(dependencies: &DependencySection) {
     }
     for (name, spec) in dependencies {
         match spec {
-            DependencySpec::Simple(version) => println!("{}: {}", name, version),
+            DependencySpec::Version(version) => println!("{}: {}", name, version),
         }
     }
 }
@@ -42,7 +42,7 @@ fn list_all_dependencies(dependencies: &DependencySection) {
 fn find_dependency(dependencies: &DependencySection, name: &str) {
     match dependencies.get(&DependencyKey::from(name)) {
         Some(spec) => match spec {
-            DependencySpec::Simple(version) => println!("{}: {}", name, version),
+            DependencySpec::Version(version) => println!("{}: {}", name, version),
         },
         None => println!("Dependency '{}' not found", name),
     };

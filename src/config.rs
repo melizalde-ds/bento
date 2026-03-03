@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::{collections::BTreeMap, path::PathBuf};
 
+use crate::resolver::Resolver;
+
 const MANIFEST_FILE: &str = "bento.toml";
 
 pub type DependencySection = BTreeMap<DependencyKey, DependencySpec>;
@@ -18,7 +20,8 @@ impl Display for DependencyKey {
 
 impl From<&str> for DependencyKey {
     fn from(value: &str) -> Self {
-        DependencyKey(value.to_string())
+        let (namespace, name, _) = Resolver::to_dependency(value).unwrap();
+        DependencyKey(format!("{}:{}", namespace, name))
     }
 }
 
@@ -80,23 +83,24 @@ pub struct ProjectMetadata {
 #[serde(untagged)]
 pub enum DependencySpec {
     // "wasi:http" = "0.2.3"
-    Simple(String),
+    Version(String),
 }
 
 impl From<&str> for DependencySpec {
     fn from(value: &str) -> Self {
-        DependencySpec::Simple(to_simple_spec(value))
+        DependencySpec::Version(extract_version(value))
     }
 }
 
-fn to_simple_spec(spec: &str) -> String {
-    let string = spec.to_string();
-    let split = string.split('@').collect::<Vec<&str>>();
-    if split.len() != 2 {
-        panic!(
-            "Invalid dependency specification '{}'. Expected format 'namespace:name@version'",
-            spec
-        );
-    };
-    format!("\"{}\" = \"{}\"", split[0], split[1])
+impl Display for DependencySpec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DependencySpec::Version(version) => write!(f, "{}", version),
+        }
+    }
+}
+
+fn extract_version(package: &str) -> String {
+    let (_, _, version) = Resolver::to_dependency(package).unwrap();
+    version
 }
