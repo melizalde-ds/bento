@@ -1,5 +1,6 @@
 use crate::cli;
 use crate::config;
+use crate::config::DependencyKey;
 use crate::config::DependencySection;
 use crate::config::DependencySpec;
 use anyhow::Result;
@@ -34,20 +35,14 @@ fn list_all_dependencies(dependencies: &DependencySection) {
     for (name, spec) in dependencies {
         match spec {
             DependencySpec::Simple(version) => println!("{}: {}", name, version),
-            DependencySpec::Detailed { version, features } => {
-                println!("{}: {} features={:?}", name, version, features);
-            }
         }
     }
 }
 
 fn find_dependency(dependencies: &DependencySection, name: &str) {
-    match dependencies.get(name) {
+    match dependencies.get(&DependencyKey::from(name)) {
         Some(spec) => match spec {
             DependencySpec::Simple(version) => println!("{}: {}", name, version),
-            DependencySpec::Detailed { version, features } => {
-                println!("{}: {} features={:?}", name, version, features);
-            }
         },
         None => println!("Dependency '{}' not found", name),
     };
