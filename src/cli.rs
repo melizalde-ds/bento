@@ -42,7 +42,7 @@ pub struct Add {
 pub struct Remove {
     /// Package in namespace:name@version format (e.g. wasi:http@0.2.3)
     #[arg(required = true, num_args = 1.., value_name = "PACKAGE")]
-    pub package: String,
+    pub package: Vec<String>,
 }
 
 #[derive(Parser, Debug)]
@@ -60,5 +60,5 @@ pub struct List {
         value_name = "PACKAGE",
         help = "Optional package name to filter the list"
     )]
-    pub package: Option<String>,
+    pub package: Option<Vec<String>>,
 }
