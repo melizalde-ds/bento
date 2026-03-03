@@ -7,7 +7,7 @@ impl Resolver {
         package.verify()
     }
 
-    pub fn lookup_package(dependency: &mut Package) -> Result<()> {
+    pub fn lookup(dependency: &mut Package) -> Result<()> {
         if dependency.version == "latest" {
             dependency.version = "0.1.0".to_string();
         };

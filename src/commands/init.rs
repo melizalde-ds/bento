@@ -1,5 +1,4 @@
 use crate::cli;
-use crate::config;
 use anyhow::{Result, bail};
 use std::path::PathBuf;
 
@@ -18,21 +17,9 @@ pub fn run(args: cli::Init) -> Result<()> {
     init_project(&project_name)
 }
 
-fn init_project(project: &str) -> Result<()> {
+fn init_project(_project: &str) -> Result<()> {
     if PathBuf::from("bento.toml").exists() {
         bail!("Project already initialized in this directory");
     }
-
-    let content = config::Manifest {
-        project: config::ProjectMetadata {
-            name: project.to_string(),
-            version: "0.1.0".to_string(),
-            description: None,
-            author: "Author Name".to_string(),
-        },
-        dependencies: config::DependencyTable { packages: None },
-    };
-    content.save()?;
-    println!("Initialized project '{}'", project);
     Ok(())
 }

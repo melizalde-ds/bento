@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use anyhow::{Result, bail};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Package {
     pub namespace: String,
     pub name: String,
