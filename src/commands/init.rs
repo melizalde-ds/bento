@@ -30,8 +30,9 @@ fn init_project(project: &str) -> Result<()> {
             description: None,
             author: "Author Name".to_string(),
         },
-        dependencies: config::DependencyConfig { dependencies: None },
+        dependencies: None,
     };
     content.save()?;
+    println!("Initialized project '{}'", project);
     Ok(())
 }

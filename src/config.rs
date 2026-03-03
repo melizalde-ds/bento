@@ -5,10 +5,12 @@ use serde::{Deserialize, Serialize};
 
 const CONFIG_FILE: &str = "bento.toml";
 
+pub type DependencySection = BTreeMap<String, DependencySpec>;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     pub project: Project,
-    pub dependencies: DependencyConfig,
+    pub dependencies: Option<DependencySection>,
 }
 
 impl ProjectConfig {
@@ -36,11 +38,6 @@ pub struct Project {
     pub version: String,
     pub description: Option<String>,
     pub author: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct DependencyConfig {
-    pub dependencies: Option<BTreeMap<String, DependencySpec>>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
