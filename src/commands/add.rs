@@ -1,5 +1,4 @@
-use std::vec;
-
+use crate::config::{DependencyKey, DependencySpec};
 use crate::lockfile::Lockfile;
 use crate::{cli, config::Manifest, resolver::Resolver};
 use anyhow::Result;
@@ -9,8 +8,15 @@ pub fn run(args: cli::Add) -> Result<()> {
     for package in &packages {
         Resolver::verify(package)?;
     }
-    let config = Manifest::load()?;
-    let mut lockfile = Lockfile::load()?;
+    let mut config = Manifest::load()?;
+    let lockfile = Lockfile::load()?;
     lockfile.sync(&config.dependencies)?;
-    todo!();
+    for package in packages {
+        let key = DependencyKey::from(package.as_str());
+        let spec = DependencySpec::from(package.as_str());
+        config.dependencies.add_package(key, spec)?;
+    }
+    config.save()?;
+
+    Ok(())
 }

@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, fmt::Display, path::PathBuf};
 
 use crate::config::{DependencyKey, DependencyTable};
 
@@ -11,7 +11,7 @@ struct LockfileKey(String);
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Lockfile {
-    pub packages: BTreeMap<LockfileKey, LockfileEntry>,
+    packages: BTreeMap<LockfileKey, LockfileEntry>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -33,9 +33,9 @@ impl LockfileKey {
     }
 }
 
-impl ToString for LockfileKey {
-    fn to_string(&self) -> String {
-        self.0.clone()
+impl Display for LockfileKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -98,16 +98,23 @@ impl Lockfile {
             }
             Some(packages) => packages,
         };
-        for package in packages.keys() {}
-
-        todo!()
+        for package in packages.keys() {
+            let lockfile_key = LockfileKey::from(package);
+            if !self.packages.contains_key(&lockfile_key) {
+                bail!(
+                    "Lockfile is missing package '{}' specified in configuration. Lockfile is out of sync with configuration.",
+                    package
+                );
+            }
+        }
+        Ok(())
     }
 }
 
-impl From<DependencyKey> for LockfileKey {
-    fn from(value: DependencyKey) -> Self {
-        let mut string = value.to_string();
-        let split = string.split('@').collect::<Vec<&str>>();
+impl From<&DependencyKey> for LockfileKey {
+    fn from(value: &DependencyKey) -> Self {
+        let string = value.to_string();
+        let split = string.split(" = ").collect::<Vec<&str>>();
         if split.len() != 2 {
             panic!("Invalid dependency key format: {}", string);
         }

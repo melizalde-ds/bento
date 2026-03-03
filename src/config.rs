@@ -82,3 +82,21 @@ pub enum DependencySpec {
     // "wasi:http" = "0.2.3"
     Simple(String),
 }
+
+impl From<&str> for DependencySpec {
+    fn from(value: &str) -> Self {
+        DependencySpec::Simple(to_simple_spec(value))
+    }
+}
+
+fn to_simple_spec(spec: &str) -> String {
+    let string = spec.to_string();
+    let split = string.split('@').collect::<Vec<&str>>();
+    if split.len() != 2 {
+        panic!(
+            "Invalid dependency specification '{}'. Expected format 'namespace:name@version'",
+            spec
+        );
+    };
+    format!("\"{}\" = \"{}\"", split[0], split[1])
+}
