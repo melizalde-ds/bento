@@ -20,7 +20,7 @@ pub struct DependencyTable {
 
 impl Manifest {
     pub fn load() -> anyhow::Result<Self> {
-        if !PathBuf::from("bento.toml").exists() {
+        if !PathBuf::from(MANIFEST_FILE).exists() {
             bail!(
                 "Project not initialized in this directory. Please run `bento init` to create a new project."
             );
