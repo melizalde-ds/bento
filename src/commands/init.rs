@@ -1,6 +1,9 @@
-use crate::cli;
+use crate::{
+    cli,
+    manifest::{Manifest, PackagesTable, ProjectMetadata},
+};
 use anyhow::{Result, bail};
-use std::path::PathBuf;
+use std::path::Path;
 
 pub fn run(args: cli::Init) -> Result<()> {
     let project_name = match args.project.as_deref() {
@@ -17,9 +20,20 @@ pub fn run(args: cli::Init) -> Result<()> {
     init_project(&project_name)
 }
 
-fn init_project(_project: &str) -> Result<()> {
-    if PathBuf::from("bento.toml").exists() {
+fn init_project(project: &str) -> Result<()> {
+    if Path::new("bento.toml").exists() {
         bail!("Project already initialized in this directory");
     }
+    let manifest = Manifest {
+        project: ProjectMetadata {
+            name: project.to_string(),
+            version: "0.1.0".to_string(),
+            description: None,
+            author: "Your Name".to_string(),
+        },
+        packages: Some(PackagesTable { packages: None }),
+    };
+    manifest.save()?;
+    println!("Initialized new project '{}'", project);
     Ok(())
 }

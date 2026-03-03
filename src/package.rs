@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use anyhow::{Result, bail};
 
+use crate::manifest::{PackageKey, PackageSpec};
+
 #[derive(Debug)]
 pub struct Package {
     pub namespace: String,
@@ -38,6 +40,15 @@ impl Package {
             self.name.clone(),
             self.version.clone(),
         ));
+    }
+
+    pub fn to_manifest_package(&self) -> Result<(PackageKey, PackageSpec)> {
+        self.verify()?;
+        self.extract().map(|(namespace, name, version)| {
+            let key = PackageKey(format!("{}:{}", namespace, name));
+            let spec = PackageSpec::Version(version);
+            (key, spec)
+        })
     }
 }
 

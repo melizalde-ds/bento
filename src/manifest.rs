@@ -7,8 +7,8 @@ const MANIFEST_FILE: &str = "bento.toml";
 
 #[derive(Deserialize, Serialize)]
 pub struct Manifest {
-    project: ProjectMetadata,
-    packages: PackagesTable,
+    pub project: ProjectMetadata,
+    pub packages: Option<PackagesTable>,
 }
 
 impl Manifest {
@@ -32,29 +32,29 @@ impl Manifest {
 }
 
 #[derive(Deserialize, Serialize)]
-struct ProjectMetadata {
-    name: String,
-    version: String,
-    description: Option<String>,
-    author: String,
+pub struct ProjectMetadata {
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub author: String,
 }
 
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq)]
-struct PackagesTable {
-    packages: Option<BTreeMap<PackageKey, PackageSpec>>,
+pub struct PackagesTable {
+    pub packages: Option<BTreeMap<PackageKey, PackageSpec>>,
 }
 
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
-struct PackageKey(String);
+pub struct PackageKey(pub String);
 
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
-enum PackageSpec {
+pub enum PackageSpec {
     Version(String),
     Features(PackageFeatures),
 }
 
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
-struct PackageFeatures {
-    version: String,
-    features: Vec<String>,
+pub struct PackageFeatures {
+    pub version: String,
+    pub features: Vec<String>,
 }
