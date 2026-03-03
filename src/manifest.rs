@@ -32,7 +32,7 @@ impl Manifest {
         Ok(())
     }
 
-    pub fn get_packages(&self) -> Result<Vec<Package>> {
+    pub fn list_packages(&self) -> Result<Vec<Package>> {
         let Some(packages) = &self.packages.packages else {
             return Ok(vec![]);
         };

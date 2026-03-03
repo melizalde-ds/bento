@@ -15,7 +15,7 @@ pub fn run(args: cli::List) -> Result<()> {
 }
 
 fn list_packages(manifest: &Manifest) -> Result<()> {
-    let packages = manifest.get_packages()?;
+    let packages = manifest.list_packages()?;
     if packages.is_empty() {
         println!("No packages found");
         return Ok(());
