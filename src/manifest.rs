@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fmt::Display, path::Path};
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::package::{self, Package};
+use crate::package::Package;
 
 const MANIFEST_FILE: &str = "bento.toml";
 
@@ -44,12 +44,13 @@ impl Manifest {
         Ok(result)
     }
 
-    pub fn get_package(&self, key: &PackageKey) -> Result<Option<Package>> {
+    pub fn get_package(&self, key: &str) -> Result<Option<Package>> {
+        let key = PackageKey(key.to_string());
         let Some(packages) = &self.packages.packages else {
             return Ok(None);
         };
-        if let Some(spec) = packages.get(key) {
-            let package = Package::from_key_and_spec(key, spec)?;
+        if let Some(spec) = packages.get(&key) {
+            let package = Package::from_key_and_spec(&key, spec)?;
             Ok(Some(package))
         } else {
             Ok(None)

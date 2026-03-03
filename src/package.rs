@@ -42,11 +42,6 @@ impl Package {
         ));
     }
 
-    pub fn from_cli_arg(arg: &str) -> Result<Self> {
-        let dependency = package_str_verify(arg)?;
-        Ok(dependency)
-    }
-
     pub fn from_key_and_spec(key: &PackageKey, spec: &PackageSpec) -> Result<Self> {
         let mut package = namespace_and_name(key.to_string().as_str())?;
         package.version = match spec {
