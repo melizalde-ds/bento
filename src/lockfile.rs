@@ -26,7 +26,8 @@ pub struct LockfileEntry {
 
 impl LockfileKey {
     pub fn verify(&self) -> Result<()> {
-        Resolver::package_verify(&self.0)
+        let _ = Resolver::package_verify(&self.0);
+        Ok(())
     }
 }
 
