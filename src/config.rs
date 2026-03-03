@@ -1,11 +1,33 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, path::PathBuf};
 
+use anyhow::bail;
 use serde::{Deserialize, Serialize};
+
+const CONFIG_FILE: &str = "bento.toml";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     pub project: Project,
     pub dependencies: DependencyConfig,
+}
+
+impl ProjectConfig {
+    pub fn load() -> anyhow::Result<Self> {
+        if !PathBuf::from("bento.toml").exists() {
+            bail!(
+                "Project not initialized in this directory. Please run `bento init` to create a new project."
+            );
+        }
+
+        let content = std::fs::read_to_string(CONFIG_FILE)?;
+        let config: Self = toml::from_str(&content)?;
+        Ok(config)
+    }
+    pub fn save(&self) -> anyhow::Result<()> {
+        let content = toml::to_string(self)?;
+        std::fs::write(CONFIG_FILE, content)?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
