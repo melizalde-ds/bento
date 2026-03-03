@@ -19,5 +19,6 @@ pub fn run(args: cli::Add) -> Result<()> {
 
     config.save()?;
     lockfile.save()?;
+    println!("Packages added successfully.");
     Ok(())
 }

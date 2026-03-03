@@ -64,6 +64,7 @@ impl DependencyTable {
         match packages {
             None => unreachable!(),
             Some(map) => {
+                println!("Adding package '{}' with spec '{}'", key, spec);
                 map.insert(key, spec);
             }
         };

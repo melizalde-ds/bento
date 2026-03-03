@@ -78,7 +78,7 @@ impl Lockfile {
         Ok(())
     }
 
-    pub fn contains(&self, package: &str) -> bool {
+    pub fn _contains(&self, package: &str) -> bool {
         self.packages.contains_key(&LockfileKey::from(package))
     }
 
@@ -105,7 +105,6 @@ impl Lockfile {
                     lockfile_key
                 );
             } else if !contains_key {
-                println!("Adding '{}' to lockfile", lockfile_key);
                 self.packages.insert(
                     lockfile_key,
                     LockfileEntry {
@@ -116,8 +115,7 @@ impl Lockfile {
                 );
             }
         }
-
-        self.save()
+        Ok(())
     }
 }
 
