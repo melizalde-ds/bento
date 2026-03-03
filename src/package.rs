@@ -42,6 +42,19 @@ impl Package {
         ));
     }
 
+    pub fn from_cli_arg(arg: &str) -> Result<Self> {
+        let dependency = package_str_verify(arg)?;
+        Ok(dependency)
+    }
+
+    pub fn from_key_and_spec(key: &PackageKey, spec: &PackageSpec) -> Result<Self> {
+        let mut package = namespace_and_name(key.to_string().as_str())?;
+        package.version = match spec {
+            PackageSpec::Version(version) => version.clone(),
+        };
+        Ok(package)
+    }
+
     pub fn to_manifest_package(&self) -> Result<(PackageKey, PackageSpec)> {
         self.verify()?;
         self.extract().map(|(namespace, name, version)| {
@@ -86,6 +99,6 @@ fn namespace_and_name(package: &str) -> Result<Package> {
     Ok(Package {
         namespace: parts[0].to_string(),
         name: parts[1].to_string(),
-        version: String::new(),
+        version: "latest".to_string(),
     })
 }

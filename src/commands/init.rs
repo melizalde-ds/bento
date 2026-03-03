@@ -31,7 +31,7 @@ fn init_project(project: &str) -> Result<()> {
             description: None,
             author: "Your Name".to_string(),
         },
-        packages: Some(PackagesTable { packages: None }),
+        packages: PackagesTable { packages: None },
     };
     manifest.save()?;
     println!("Initialized new project '{}'", project);

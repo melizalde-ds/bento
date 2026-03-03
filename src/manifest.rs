@@ -1,14 +1,16 @@
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, fmt::Display, path::Path};
 
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
+
+use crate::package::{self, Package};
 
 const MANIFEST_FILE: &str = "bento.toml";
 
 #[derive(Deserialize, Serialize)]
 pub struct Manifest {
     pub project: ProjectMetadata,
-    pub packages: Option<PackagesTable>,
+    pub packages: PackagesTable,
 }
 
 impl Manifest {
@@ -29,6 +31,30 @@ impl Manifest {
         std::fs::write(MANIFEST_FILE, content)?;
         Ok(())
     }
+
+    pub fn get_packages(&self) -> Result<Vec<Package>> {
+        let Some(packages) = &self.packages.packages else {
+            return Ok(vec![]);
+        };
+        let mut result = Vec::new();
+        for (key, spec) in packages {
+            let package = Package::from_key_and_spec(key, spec)?;
+            result.push(package);
+        }
+        Ok(result)
+    }
+
+    pub fn get_package(&self, key: &PackageKey) -> Result<Option<Package>> {
+        let Some(packages) = &self.packages.packages else {
+            return Ok(None);
+        };
+        if let Some(spec) = packages.get(key) {
+            let package = Package::from_key_and_spec(key, spec)?;
+            Ok(Some(package))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize)]
@@ -47,10 +73,15 @@ pub struct PackagesTable {
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct PackageKey(pub String);
 
+impl Display for PackageKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum PackageSpec {
     Version(String),
-    Features(PackageFeatures),
 }
 
 #[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
