@@ -1,26 +1,27 @@
-use anyhow::{Result, bail};
-use regex::Regex;
-
-const WIT_PACKAGE_REGEX: &str =
-    r"^[a-zA-Z][a-zA-Z0-9_-]*:[a-zA-Z][a-zA-Z0-9_-]*@[0-9]+\.[0-9]+\.[0-9]+$";
+use crate::{lockfile::LockDetails, package::Package};
+use anyhow::Result;
 
 pub struct Resolver;
 impl Resolver {
-    pub fn package_verify(package: &str) -> Result<()> {
-        let re = Regex::new(WIT_PACKAGE_REGEX)?;
-        if !re.is_match(package) {
-            bail!("Invalid package format: {}", package);
-        }
+    pub fn _verify(package: &Package) -> Result<()> {
+        package.verify()
+    }
+
+    pub fn lookup(dependency: &mut Package) -> Result<()> {
+        if dependency.version == "latest" {
+            dependency.version = "0.1.0".to_string();
+        };
         Ok(())
     }
 
-    pub fn to_dependency(package: &str) -> Result<(String, String, String)> {
-        let parts = package.split('@').collect::<Vec<&str>>();
-        let name_parts = parts[0].split(':').collect::<Vec<&str>>();
+    pub fn resolve_packages(package: &Package) -> Result<(Package, LockDetails)> {
         Ok((
-            name_parts[0].to_string(),
-            name_parts[1].to_string(),
-            parts[1].to_string(),
+            package.clone(),
+            LockDetails {
+                checksum: "abc123".to_string(),
+                source: "https://example.com/package.tar.gz".to_string(),
+                dependencies: vec![],
+            },
         ))
     }
 }

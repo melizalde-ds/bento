@@ -1,7 +1,8 @@
 mod cli;
 mod commands;
-mod config;
 mod lockfile;
+mod manifest;
+mod package;
 mod resolver;
 
 use anyhow::Result;

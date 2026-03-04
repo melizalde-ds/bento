@@ -1,49 +1,37 @@
-use crate::cli;
-use crate::config;
-use crate::config::DependencyKey;
-use crate::config::DependencySection;
-use crate::config::DependencySpec;
+use crate::{cli, manifest::Manifest};
 use anyhow::Result;
 
 pub fn run(args: cli::List) -> Result<()> {
-    let config = config::Manifest::load()?;
-    println!(
-        "Project: {} v{}",
-        config.project.name, config.project.version
-    );
-    let dependencies = match config.dependencies.packages {
-        Some(dependencies) => dependencies,
-        None => {
-            println!("No dependencies found");
-            return Ok(());
-        }
-    };
-
+    let manifest = Manifest::load()?;
     match args.package {
-        None => list_all_dependencies(&dependencies),
-        Some(name) => find_dependency(&dependencies, &name),
+        None => list_packages(&manifest),
+        Some(packages) => {
+            for package in packages {
+                list_package(&manifest, &package)?;
+            }
+            Ok(())
+        }
     }
+}
 
+fn list_packages(manifest: &Manifest) -> Result<()> {
+    let packages = manifest.list_packages()?;
+    if packages.is_empty() {
+        println!("No packages found");
+        return Ok(());
+    }
+    println!("Packages:");
+    for package in packages {
+        println!("- {}", package);
+    }
     Ok(())
 }
 
-fn list_all_dependencies(dependencies: &DependencySection) {
-    if dependencies.is_empty() {
-        println!("No dependencies found");
-        return;
-    }
-    for (name, spec) in dependencies {
-        match spec {
-            DependencySpec::Version(version) => println!("{}: {}", name, version),
-        }
-    }
-}
-
-fn find_dependency(dependencies: &DependencySection, name: &str) {
-    match dependencies.get(&DependencyKey::from(name)) {
-        Some(spec) => match spec {
-            DependencySpec::Version(version) => println!("{}: {}", name, version),
-        },
-        None => println!("Dependency '{}' not found", name),
+fn list_package(manifest: &Manifest, package_name: &str) -> Result<()> {
+    let Some(package) = manifest.get_package(package_name)? else {
+        println!("Package '{}' not found", package_name);
+        return Ok(());
     };
+    println!("{}", package);
+    Ok(())
 }
