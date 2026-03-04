@@ -1,9 +1,9 @@
-use crate::package::Package;
+use crate::{lockfile::LockDetails, package::Package};
 use anyhow::Result;
 
 pub struct Resolver;
 impl Resolver {
-    pub fn verify(package: &Package) -> Result<()> {
+    pub fn _verify(package: &Package) -> Result<()> {
         package.verify()
     }
 
@@ -12,5 +12,16 @@ impl Resolver {
             dependency.version = "0.1.0".to_string();
         };
         Ok(())
+    }
+
+    pub fn resolve_packages(package: &Package) -> Result<(Package, LockDetails)> {
+        Ok((
+            package.clone(),
+            LockDetails {
+                checksum: "abc123".to_string(),
+                source: "https://example.com/package.tar.gz".to_string(),
+                dependencies: vec![],
+            },
+        ))
     }
 }

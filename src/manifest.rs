@@ -56,9 +56,18 @@ impl Manifest {
             Ok(None)
         }
     }
+
+    pub fn add_packages(&mut self, packages: &Vec<Package>) -> Result<()> {
+        let map = self.packages.packages.get_or_insert_with(BTreeMap::new);
+        for package in packages {
+            let (key, spec) = package.to_manifest_package()?;
+            map.insert(key, spec);
+        }
+        Ok(())
+    }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectMetadata {
     pub name: String,
     pub version: String,
@@ -66,12 +75,12 @@ pub struct ProjectMetadata {
     pub author: String,
 }
 
-#[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq)]
 pub struct PackagesTable {
     pub packages: Option<BTreeMap<PackageKey, PackageSpec>>,
 }
 
-#[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct PackageKey(pub String);
 
 impl Display for PackageKey {
@@ -80,13 +89,13 @@ impl Display for PackageKey {
     }
 }
 
-#[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[serde(untagged)]
 pub enum PackageSpec {
     Version(String),
 }
-
-#[derive(Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct PackageFeatures {
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub struct _PackageFeatures {
     pub version: String,
     pub features: Vec<String>,
 }

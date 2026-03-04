@@ -29,23 +29,25 @@ impl Lockfile {
         Ok(())
     }
 
-    pub fn _list_packages(&self) -> Result<Vec<Package>> {
-        let mut result = Vec::new();
-        for key in self.packages.keys() {
-            let package = Package::from_lock_key(key)?;
-            result.push(package);
-        }
-        Ok(result)
+    pub fn create() -> Result<Lockfile> {
+        let lockfile = Lockfile {
+            packages: BTreeMap::new(),
+        };
+        lockfile.save()?;
+        Ok(lockfile)
     }
 
-    pub fn _get_package(&self, key: &str) -> Result<Option<Package>> {
-        let key = LockKey(key.to_string());
-        if self.packages.contains_key(&key) {
-            let package = Package::from_lock_key(&key)?;
-            Ok(Some(package))
-        } else {
-            Ok(None)
-        }
+    pub fn add_packages(&mut self, packages: Vec<(Package, LockDetails)>) -> Result<()> {
+        let packages = packages
+            .into_iter()
+            .map(|(package, details)| {
+                let key = LockKey(package.to_string());
+                (key, details)
+            })
+            .collect::<Vec<(LockKey, LockDetails)>>();
+
+        self.packages.extend(packages);
+        Ok(())
     }
 }
 
@@ -58,7 +60,7 @@ impl Display for LockKey {
     }
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LockDetails {
     pub source: String,
     pub checksum: String,

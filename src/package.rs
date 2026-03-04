@@ -2,12 +2,9 @@ use std::fmt::Display;
 
 use anyhow::{Result, bail};
 
-use crate::{
-    lockfile::LockKey,
-    manifest::{PackageKey, PackageSpec},
-};
+use crate::manifest::{PackageKey, PackageSpec};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Package {
     pub namespace: String,
     pub name: String,
@@ -37,7 +34,7 @@ impl Package {
         Ok(())
     }
 
-    pub fn _extract(&self) -> Result<(String, String, String)> {
+    pub fn extract(&self) -> Result<(String, String, String)> {
         Ok((
             self.namespace.clone(),
             self.name.clone(),
@@ -53,18 +50,14 @@ impl Package {
         Ok(package)
     }
 
-    pub fn from_lock_key(key: &LockKey) -> Result<Self> {
-        full_package_name(key.to_string().as_str())
+    pub fn to_manifest_package(&self) -> Result<(PackageKey, PackageSpec)> {
+        self.verify()?;
+        self.extract().map(|(namespace, name, version)| {
+            let key = PackageKey(format!("{}:{}", namespace, name));
+            let spec = PackageSpec::Version(version);
+            (key, spec)
+        })
     }
-
-    // pub fn to_manifest_package(&self) -> Result<(PackageKey, PackageSpec)> {
-    //     self.verify()?;
-    //     self.extract().map(|(namespace, name, version)| {
-    //         let key = PackageKey(format!("{}:{}", namespace, name));
-    //         let spec = PackageSpec::Version(version);
-    //         (key, spec)
-    //     })
-    // }
 }
 
 fn package_str_verify(package: &str) -> Result<Package> {
