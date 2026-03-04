@@ -1,5 +1,5 @@
 use crate::{cli, manifest::Manifest};
-use anyhow::{Ok, Result};
+use anyhow::Result;
 
 pub fn run(args: cli::List) -> Result<()> {
     let manifest = Manifest::load()?;

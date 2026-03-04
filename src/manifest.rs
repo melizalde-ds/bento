@@ -10,7 +10,7 @@ const MANIFEST_FILE: &str = "bento.toml";
 #[derive(Deserialize, Serialize)]
 pub struct Manifest {
     pub project: ProjectMetadata,
-    pub packages: PackagesTable,
+    pub packages: BTreeMap<PackageKey, PackageSpec>,
 }
 
 impl Manifest {
@@ -33,9 +33,7 @@ impl Manifest {
     }
 
     pub fn list_packages(&self) -> Result<Vec<Package>> {
-        let Some(packages) = &self.packages.packages else {
-            return Ok(vec![]);
-        };
+        let packages = &self.packages;
         let mut result = Vec::new();
         for (key, spec) in packages {
             let package = Package::from_key_and_spec(key, spec)?;
@@ -46,10 +44,7 @@ impl Manifest {
 
     pub fn get_package(&self, key: &str) -> Result<Option<Package>> {
         let key = PackageKey(key.to_string());
-        let Some(packages) = &self.packages.packages else {
-            return Ok(None);
-        };
-        if let Some(spec) = packages.get(&key) {
+        if let Some(spec) = self.packages.get(&key) {
             let package = Package::from_key_and_spec(&key, spec)?;
             Ok(Some(package))
         } else {
@@ -57,8 +52,8 @@ impl Manifest {
         }
     }
 
-    pub fn add_packages(&mut self, packages: &Vec<Package>) -> Result<()> {
-        let map = self.packages.packages.get_or_insert_with(BTreeMap::new);
+    pub fn add_packages(&mut self, packages: &[Package]) -> Result<()> {
+        let map = &mut self.packages;
         for package in packages {
             let (key, spec) = package.to_manifest_package()?;
             map.insert(key, spec);
@@ -73,11 +68,6 @@ pub struct ProjectMetadata {
     pub version: String,
     pub description: Option<String>,
     pub author: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq)]
-pub struct PackagesTable {
-    pub packages: Option<BTreeMap<PackageKey, PackageSpec>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]

@@ -1,9 +1,9 @@
 use crate::{
     cli,
-    manifest::{Manifest, PackagesTable, ProjectMetadata},
+    manifest::{Manifest, ProjectMetadata},
 };
 use anyhow::{Result, bail};
-use std::path::Path;
+use std::{collections::BTreeMap, path::Path};
 
 pub fn run(args: cli::Init) -> Result<()> {
     let project_name = match args.project.as_deref() {
@@ -31,7 +31,7 @@ fn init_project(project: &str) -> Result<()> {
             description: None,
             author: "Your Name".to_string(),
         },
-        packages: PackagesTable { packages: None },
+        packages: BTreeMap::new(),
     };
     manifest.save()?;
     println!("Initialized new project '{}'", project);

@@ -8,6 +8,7 @@ use crate::package::Package;
 const LOCKFILE_NAME: &str = "bento.lock";
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
 pub struct Lockfile {
     pub packages: BTreeMap<LockKey, LockDetails>,
 }
