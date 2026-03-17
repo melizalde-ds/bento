@@ -9,16 +9,7 @@ use crate::{
 };
 
 pub fn run(args: &cli::Add) -> Result<()> {
-    let mut manifest = Manifest::load()?;
-    let mut lockfile = match Lockfile::load()? {
-        Some(lockfile) => lockfile,
-        None => Lockfile::create()?,
-    };
-    let packages = args
-        .package
-        .iter()
-        .map(|p| Package::try_from(p.as_str()))
-        .collect::<Result<Vec<Package>>>()?;
+    let (mut manifest, mut lockfile, packages) = super::load_packages(&args.package)?;
 
     let mut result = vec![];
     for mut package in packages {
