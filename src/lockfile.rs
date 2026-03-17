@@ -40,7 +40,7 @@ impl Lockfile {
         Ok(lockfile)
     }
 
-    pub fn add_packages(&mut self, packages: Vec<(Package, LockDetails)>) -> Result<()> {
+    pub fn add_packages(&mut self, packages: Vec<(Package, LockDetails)>) {
         let packages = packages
             .into_iter()
             .map(|(package, details)| {
@@ -50,7 +50,6 @@ impl Lockfile {
             .collect::<Vec<(LockKey, LockDetails)>>();
 
         self.packages.extend(packages);
-        Ok(())
     }
 }
 

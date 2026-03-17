@@ -8,7 +8,7 @@ use crate::{
     resolver::Resolver,
 };
 
-pub fn run(args: cli::Add) -> Result<()> {
+pub fn run(args: &cli::Add) -> Result<()> {
     let mut manifest = Manifest::load()?;
     let mut lockfile = match Lockfile::load()? {
         Some(lockfile) => lockfile,
@@ -44,8 +44,11 @@ fn add_packages(
         .cloned()
         .collect::<Vec<Package>>();
     manifest.add_packages(&packages)?;
-    lockfile.add_packages(packages_details)?;
-    let display: Vec<String> = packages.iter().map(|p| p.to_string()).collect();
-    println!("Packages added successfully: {:?}", display);
+    lockfile.add_packages(packages_details);
+    let display: Vec<String> = packages
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+    println!("Packages added successfully: {display:?}");
     Ok(())
 }

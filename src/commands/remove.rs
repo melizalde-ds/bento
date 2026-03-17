@@ -1,7 +1,7 @@
 use crate::{cli, package::Package};
 use anyhow::Result;
 
-pub fn run(args: cli::Remove) -> Result<()> {
+pub fn run(args: &cli::Remove) -> Result<()> {
     let mut manifest = crate::manifest::Manifest::load()?;
     let mut lockfile = match crate::lockfile::Lockfile::load()? {
         Some(lockfile) => lockfile,

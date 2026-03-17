@@ -22,16 +22,16 @@ fn list_packages(manifest: &Manifest) -> Result<()> {
     }
     println!("Packages:");
     for package in packages {
-        println!("- {}", package);
+        println!("- {package}");
     }
     Ok(())
 }
 
 fn list_package(manifest: &Manifest, package_name: &str) -> Result<()> {
     let Some(package) = manifest.get_package(package_name)? else {
-        println!("Package '{}' not found", package_name);
+        println!("Package '{package_name}' not found");
         return Ok(());
     };
-    println!("{}", package);
+    println!("{package}");
     Ok(())
 }
