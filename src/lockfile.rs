@@ -8,9 +8,10 @@ use crate::package::Package;
 const LOCKFILE_NAME: &str = "bento.lock";
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(transparent)]
+#[serde(deny_unknown_fields)]
 pub struct Lockfile {
     pub packages: BTreeMap<LockKey, LockDetails>,
+    pub dependencies: BTreeMap<LockKey, Vec<LockKey>>,
 }
 
 impl Lockfile {
@@ -33,6 +34,7 @@ impl Lockfile {
     pub fn create() -> Result<Lockfile> {
         let lockfile = Lockfile {
             packages: BTreeMap::new(),
+            dependencies: BTreeMap::new(),
         };
         lockfile.save()?;
         Ok(lockfile)

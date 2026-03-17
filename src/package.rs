@@ -34,12 +34,12 @@ impl Package {
         Ok(())
     }
 
-    pub fn extract(&self) -> Result<(String, String, String)> {
-        Ok((
+    pub fn extract(&self) -> (String, String, String) {
+        (
             self.namespace.clone(),
             self.name.clone(),
             self.version.clone(),
-        ))
+        )
     }
 
     pub fn from_key_and_spec(key: &PackageKey, spec: &PackageSpec) -> Result<Self> {
@@ -52,11 +52,10 @@ impl Package {
 
     pub fn to_manifest_package(&self) -> Result<(PackageKey, PackageSpec)> {
         self.verify()?;
-        self.extract().map(|(namespace, name, version)| {
-            let key = PackageKey(format!("{}:{}", namespace, name));
-            let spec = PackageSpec::Version(version);
-            (key, spec)
-        })
+        let (namespace, name, version) = self.extract();
+        let key = PackageKey(format!("{namespace}:{name}"));
+        let spec = PackageSpec::Version(version);
+        Ok((key, spec))
     }
 }
 
@@ -73,11 +72,8 @@ fn package_str_verify(package: &str) -> Result<Package> {
 fn full_package_name(package: &str) -> Result<Package> {
     let parts = package.split('@').collect::<Vec<&str>>();
     if parts.len() != 2 {
-        bail!(
-            "Package '{}' must be in 'namespace:name@version' format",
-            package
-        );
-    };
+        bail!("Package '{package}' must be in 'namespace:name@version' format");
+    }
     let mut dependency = namespace_and_name(parts[0])?;
     dependency.version = parts[1].to_string();
     Ok(dependency)
@@ -87,8 +83,7 @@ fn namespace_and_name(package: &str) -> Result<Package> {
     let parts = package.split(':').collect::<Vec<&str>>();
     if parts.len() != 2 {
         bail!(
-            "Package '{}' must be in 'namespace:name' format when version is not specified",
-            package
+            "Package '{package}' must be in 'namespace:name' format when version is not specified"
         );
     }
     Ok(Package {

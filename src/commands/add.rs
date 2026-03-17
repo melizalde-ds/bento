@@ -45,5 +45,7 @@ fn add_packages(
         .collect::<Vec<Package>>();
     manifest.add_packages(&packages)?;
     lockfile.add_packages(packages_details)?;
+    let display: Vec<String> = packages.iter().map(|p| p.to_string()).collect();
+    println!("Packages added successfully: {:?}", display);
     Ok(())
 }
