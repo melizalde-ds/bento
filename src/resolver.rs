@@ -24,7 +24,7 @@ impl Resolver {
             LockDetails {
                 checksum: "abc123".to_string(),
                 source: "https://example.com/package.tar.gz".to_string(),
-                dependencies: vec![],
+                dependencies: vec!["dependency1".to_string(), "dependency2".to_string()],
             },
         ))
     }

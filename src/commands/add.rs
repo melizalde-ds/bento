@@ -18,7 +18,7 @@ pub fn run(args: &cli::Add) -> Result<()> {
         result.push(resolved);
     }
 
-    add_packages(&mut manifest, &mut lockfile, result);
+    add_packages(&mut manifest, &mut lockfile, &result);
     manifest.save()?;
     lockfile.save()?;
 
@@ -28,7 +28,7 @@ pub fn run(args: &cli::Add) -> Result<()> {
 fn add_packages(
     manifest: &mut Manifest,
     lockfile: &mut Lockfile,
-    packages_details: Vec<(Package, LockDetails)>,
+    packages_details: &[(Package, LockDetails)],
 ) {
     let packages = packages_details
         .iter()
@@ -36,7 +36,7 @@ fn add_packages(
         .cloned()
         .collect::<Vec<Package>>();
     manifest.add_packages(&packages);
-    lockfile.add_packages(&packages_details);
+    lockfile.add_packages(packages_details);
     let display: Vec<String> = packages
         .iter()
         .map(std::string::ToString::to_string)
