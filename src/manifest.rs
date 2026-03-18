@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::{Result, bail};
+use anyhow::{Error, Result, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::package::Package;
@@ -52,13 +52,35 @@ impl Manifest {
         }
     }
 
-    pub fn add_packages(&mut self, packages: &[Package]) -> Result<()> {
+    pub fn add_packages<'a>(
+        &mut self,
+        packages: &'a [Package],
+    ) -> (Vec<&'a Package>, Option<Vec<(&'a Package, Error)>>) {
         let map = &mut self.packages;
+        let mut added = vec![];
+        let mut failed = vec![];
+
         for package in packages {
-            let (key, spec) = package.to_manifest_package()?;
-            map.insert(key, spec);
+            match package.to_manifest_package() {
+                Ok((key, spec)) => {
+                    map.insert(key.clone(), spec);
+                    added.push(package);
+                }
+                Err(e) => {
+                    failed.push((package, e));
+                }
+            }
         }
-        Ok(())
+
+        if failed.is_empty() {
+            (added, None)
+        } else {
+            (added, Some(failed))
+        }
+    }
+
+    pub fn remove_packages(&mut self, packages: &[Package]) -> Vec<Result<PackageKey>> {
+        todo!("Implement package removal from manifest")
     }
 }
 
@@ -70,7 +92,7 @@ pub struct ProjectMetadata {
     pub author: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash, Clone)]
 pub struct PackageKey(pub String);
 
 impl Display for PackageKey {

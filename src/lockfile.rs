@@ -51,6 +51,23 @@ impl Lockfile {
 
         self.packages.extend(packages);
     }
+
+    pub fn remove_packages(&mut self, packages: Vec<Package>) -> Vec<Result<LockKey>> {
+        let package_keys = packages
+            .into_iter()
+            .map(|package| LockKey(package.to_string()))
+            .collect::<Vec<LockKey>>();
+
+        let mut results = Vec::new();
+        for key in package_keys {
+            if self.packages.remove(&key).is_some() {
+                results.push(Ok(key));
+            } else {
+                results.push(Err(anyhow::anyhow!("Package {key} not found in lockfile",)));
+            }
+        }
+        results
+    }
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]

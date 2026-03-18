@@ -34,11 +34,11 @@ impl Package {
         Ok(())
     }
 
-    pub fn extract(&self) -> (String, String, String) {
+    pub fn extract(&self) -> (&str, &str, &str) {
         (
-            self.namespace.clone(),
-            self.name.clone(),
-            self.version.clone(),
+            self.namespace.as_str(),
+            self.name.as_str(),
+            self.version.as_str(),
         )
     }
 
@@ -54,7 +54,7 @@ impl Package {
         self.verify()?;
         let (namespace, name, version) = self.extract();
         let key = PackageKey(format!("{namespace}:{name}"));
-        let spec = PackageSpec::Version(version);
+        let spec = PackageSpec::Version(version.to_string());
         Ok((key, spec))
     }
 }
