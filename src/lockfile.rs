@@ -1,8 +1,10 @@
+use std::collections::btree_map::Entry;
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 
+use crate::commands::LockfileResult;
 use crate::package::Package;
 
 const LOCKFILE_NAME: &str = "bento.lock";
@@ -40,19 +42,33 @@ impl Lockfile {
         Ok(lockfile)
     }
 
-    pub fn add_packages(&mut self, packages: Vec<(Package, LockDetails)>) {
-        let packages = packages
-            .into_iter()
-            .map(|(package, details)| {
-                let key = LockKey(package.to_string());
-                (key, details)
-            })
-            .collect::<Vec<(LockKey, LockDetails)>>();
+    pub fn add_packages<'a>(
+        &'a mut self,
+        packages: &'a [(Package, LockDetails)],
+    ) -> LockfileResult<'a> {
+        let mut oks = vec![];
+        let mut errs = vec![];
+        for (package, details) in packages {
+            let key = LockKey(package.to_string());
+            match self.packages.entry(key.clone()) {
+                Entry::Vacant(entry) => {
+                    entry.insert(details.clone());
+                    oks.push(package);
+                }
+                Entry::Occupied(_) => {
+                    errs.push((package, anyhow!("Package {key} already exists in lockfile")));
+                }
+            }
+        }
 
-        self.packages.extend(packages);
+        if errs.is_empty() {
+            (oks, None)
+        } else {
+            (vec![], Some(errs))
+        }
     }
 
-    pub fn remove_packages(&mut self, packages: Vec<Package>) -> Vec<Result<LockKey>> {
+    pub fn _remove_packages(&mut self, packages: Vec<Package>) -> Vec<Result<LockKey>> {
         let package_keys = packages
             .into_iter()
             .map(|package| LockKey(package.to_string()))
@@ -63,14 +79,14 @@ impl Lockfile {
             if self.packages.remove(&key).is_some() {
                 results.push(Ok(key));
             } else {
-                results.push(Err(anyhow::anyhow!("Package {key} not found in lockfile",)));
+                results.push(Err(anyhow::anyhow!("Package {key} not found in lockfile")));
             }
         }
         results
     }
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct LockKey(pub String);
 
 impl Display for LockKey {
@@ -79,7 +95,7 @@ impl Display for LockKey {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct LockDetails {
     pub source: String,
     pub checksum: String,

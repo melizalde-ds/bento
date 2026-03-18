@@ -1,8 +1,9 @@
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::{Error, Result, bail};
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 
+use crate::commands::ManifestResult;
 use crate::package::Package;
 
 const MANIFEST_FILE: &str = "bento.toml";
@@ -52,10 +53,7 @@ impl Manifest {
         }
     }
 
-    pub fn add_packages<'a>(
-        &mut self,
-        packages: &'a [Package],
-    ) -> (Vec<&'a Package>, Option<Vec<(&'a Package, Error)>>) {
+    pub fn add_packages<'a>(&'a mut self, packages: &'a [Package]) -> ManifestResult<'a> {
         let map = &mut self.packages;
         let mut added = vec![];
         let mut failed = vec![];
@@ -77,10 +75,6 @@ impl Manifest {
         } else {
             (added, Some(failed))
         }
-    }
-
-    pub fn remove_packages(&mut self, packages: &[Package]) -> Vec<Result<PackageKey>> {
-        todo!("Implement package removal from manifest")
     }
 }
 
