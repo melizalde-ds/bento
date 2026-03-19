@@ -23,10 +23,7 @@ pub enum Commands {
 #[command(about = "Initialize a new project")]
 pub struct Init {
     /// Project name; use '.' or '' to use the current directory name
-    #[arg(
-        value_name = "NAME",
-        help = "Project name; use '.' or '' to use the current directory name"
-    )]
+    #[arg(value_name = "NAME")]
     pub project: Option<String>,
 }
 
@@ -58,9 +55,6 @@ pub struct Fetch {
 #[command(about = "List WIT items")]
 pub struct List {
     /// Package in namespace:name@version format (e.g. wasi:http@0.2.3) or namespace:name format (e.g. wasi:http)
-    #[arg(
-        value_name = "PACKAGE",
-        help = "Optional package name to filter the list"
-    )]
+    #[arg(value_name = "PACKAGE")]
     pub package: Option<Vec<String>>,
 }

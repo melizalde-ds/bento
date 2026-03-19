@@ -2,18 +2,18 @@ use crate::cli;
 use crate::lockfile::Lockfile;
 use crate::manifest::Manifest;
 use crate::package::Package;
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 pub fn run(args: &cli::Remove) -> Result<()> {
     let (mut manifest, mut lockfile, packages) = super::load_packages(&args.package)?;
 
-    remove_packages(&mut manifest, &mut lockfile, &packages);
+    remove_packages(&mut manifest, &mut lockfile, &packages)?;
     manifest.save()?;
     lockfile.save()?;
     Ok(())
 }
 
-fn remove_packages(manifest: &mut Manifest, lockfile: &mut Lockfile, packages: &[Package]) {
+fn remove_packages(manifest: &mut Manifest, lockfile: &mut Lockfile, packages: &[Package]) -> Result<()> {
     let mut removed = vec![];
     let mut errs = vec![];
     for package in packages {
@@ -21,14 +21,18 @@ fn remove_packages(manifest: &mut Manifest, lockfile: &mut Lockfile, packages: &
             Ok((key, _)) => match manifest.remove_package(key) {
                 Ok(key) => match lockfile.remove_package(key) {
                     Ok(key) => removed.push(key),
-                    Err(_) => errs.push(format!("{:?}", package.extract())),
+                    Err(e) => errs.push(format!("{package}: {e}")),
                 },
-                Err(_) => errs.push(format!("{:?}", package.extract())),
+                Err(e) => errs.push(format!("{package}: {e}")),
             },
-            Err(_) => {
-                errs.push(format!("{:?}", package.extract()));
+            Err(e) => {
+                errs.push(format!("{package}: {e}"));
             }
         }
+    }
+
+    if !errs.is_empty() {
+        bail!("Failed to remove packages:\n{}", errs.join("\n"));
     }
 
     println!(
@@ -39,10 +43,5 @@ fn remove_packages(manifest: &mut Manifest, lockfile: &mut Lockfile, packages: &
             .collect::<Vec<&str>>()
             .join(", ")
     );
-    if !errs.is_empty() {
-        println!(
-            "Packages were not removed successfully: {}",
-            errs.join(", ")
-        );
-    }
+    Ok(())
 }

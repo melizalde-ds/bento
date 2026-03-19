@@ -1,5 +1,4 @@
 use std::collections::btree_map::Entry;
-use std::vec;
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
 use anyhow::{Result, anyhow, bail};
@@ -56,22 +55,22 @@ impl Lockfile {
                 Entry::Vacant(entry) => {
                     entry.insert(details.clone());
                     oks.push(package);
+                    for dep in &details.dependencies {
+                        match self.dependencies.entry(dep.clone()) {
+                            Entry::Occupied(entry) => {
+                                let deps = entry.into_mut();
+                                if !deps.contains(&key) {
+                                    deps.push(key.clone());
+                                }
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(vec![key.clone()]);
+                            }
+                        }
+                    }
                 }
                 Entry::Occupied(_) => {
                     errs.push((package, anyhow!("Package {key} already exists in lockfile")));
-                }
-            }
-            for dep in &details.dependencies {
-                match self.dependencies.entry(dep.clone()) {
-                    Entry::Occupied(entry) => {
-                        let deps = entry.into_mut();
-                        if !deps.contains(&key) {
-                            deps.push(key.clone());
-                        }
-                    }
-                    Entry::Vacant(entry) => {
-                        entry.insert(vec![key.clone()]);
-                    }
                 }
             }
         }
@@ -79,7 +78,7 @@ impl Lockfile {
         if errs.is_empty() {
             (oks, None)
         } else {
-            (vec![], Some(errs))
+            (oks, Some(errs))
         }
     }
 
@@ -102,8 +101,8 @@ impl Lockfile {
                             }
                         }
                         Entry::Vacant(entry) => {
-                            unreachable!(
-                                "Dependency {} not found in lockfile dependencies",
+                            bail!(
+                                "Lockfile is in an inconsistent state: dependency {} not found in dependency graph",
                                 entry.into_key()
                             );
                         }

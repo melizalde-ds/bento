@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 use crate::{
     cli,
@@ -18,7 +18,7 @@ pub fn run(args: &cli::Add) -> Result<()> {
         result.push(resolved);
     }
 
-    add_packages(&mut manifest, &mut lockfile, &result);
+    add_packages(&mut manifest, &mut lockfile, &result)?;
     manifest.save()?;
     lockfile.save()?;
 
@@ -29,17 +29,35 @@ fn add_packages(
     manifest: &mut Manifest,
     lockfile: &mut Lockfile,
     packages_details: &[(Package, LockDetails)],
-) {
+) -> Result<()> {
     let packages = packages_details
         .iter()
         .map(|(package, _)| package)
         .cloned()
         .collect::<Vec<Package>>();
-    manifest.add_packages(&packages);
-    lockfile.add_packages(packages_details);
+
+    let (_, manifest_errs) = manifest.add_packages(&packages);
+    let (_, lockfile_errs) = lockfile.add_packages(packages_details);
+
+    let mut errs: Vec<String> = vec![];
+    if let Some(failures) = manifest_errs {
+        for (pkg, e) in failures {
+            errs.push(format!("{pkg} (manifest): {e}"));
+        }
+    }
+    if let Some(failures) = lockfile_errs {
+        for (pkg, e) in failures {
+            errs.push(format!("{pkg} (lockfile): {e}"));
+        }
+    }
+    if !errs.is_empty() {
+        bail!("Failed to add packages:\n{}", errs.join("\n"));
+    }
+
     let display: Vec<String> = packages
         .iter()
         .map(std::string::ToString::to_string)
         .collect();
     println!("Packages added successfully: {}", display.join(", "));
+    Ok(())
 }

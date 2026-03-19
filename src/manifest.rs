@@ -63,8 +63,18 @@ impl Manifest {
         for package in packages {
             match package.to_manifest_package() {
                 Ok((key, spec)) => {
-                    map.insert(key.clone(), spec);
-                    added.push(package);
+                    match map.entry(key.clone()) {
+                        Entry::Vacant(entry) => {
+                            entry.insert(spec);
+                            added.push(package);
+                        }
+                        Entry::Occupied(_) => {
+                            failed.push((
+                                package,
+                                anyhow!("Package {key} already exists in manifest"),
+                            ));
+                        }
+                    }
                 }
                 Err(e) => {
                     failed.push((
@@ -83,9 +93,9 @@ impl Manifest {
     }
 
     pub fn remove_package(&mut self, key: PackageKey) -> Result<LockKey> {
-        let deps = &mut self.packages;
+        let map = &mut self.packages;
 
-        match deps.entry(key) {
+        match map.entry(key) {
             Entry::Occupied(entry) => {
                 let key = format!(
                     "{}@{}",

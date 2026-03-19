@@ -1,4 +1,3 @@
-use crate::lockfile::LockKey;
 use crate::{lockfile::LockDetails, package::Package};
 use anyhow::Result;
 
@@ -25,10 +24,7 @@ impl Resolver {
             LockDetails {
                 checksum: "abc123".to_string(),
                 source: "https://example.com/package.tar.gz".to_string(),
-                dependencies: vec![
-                    LockKey("dependency1".to_string()),
-                    LockKey("dependency2".to_string()),
-                ],
+                dependencies: vec![],
             },
         ))
     }
