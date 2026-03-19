@@ -2,15 +2,16 @@ use std::collections::btree_map::Entry;
 use std::vec;
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::commands::LockfileResult;
+use crate::manifest::PackageKey;
 use crate::package::Package;
 
 const LOCKFILE_NAME: &str = "bento.lock";
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Lockfile {
     pub packages: BTreeMap<LockKey, LockDetails>,
@@ -82,30 +83,32 @@ impl Lockfile {
         }
     }
 
-    pub fn _remove_packages(&mut self, packages: Vec<Package>) -> Vec<Result<LockKey>> {
-        let package_keys = packages
-            .into_iter()
-            .map(|package| LockKey(package.to_string()))
-            .collect::<Vec<LockKey>>();
+    pub fn remove_package(&mut self, key: LockKey) -> Result<LockKey> {
+        let packages = &mut self.packages;
 
-        let mut results = Vec::new();
-        for key in package_keys {
-            if self.packages.remove(&key).is_some() {
-                results.push(Ok(key));
-            } else {
-                results.push(Err(anyhow::anyhow!("Package {key} not found in lockfile")));
+        match packages.entry(key) {
+            Entry::Occupied(entry) => {
+                let res = entry.key().clone();
+                entry.remove();
+                Ok(res)
             }
+            Entry::Vacant(entry) => bail!("Package {} not found in lockfile", entry.into_key()),
         }
-        results
     }
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub struct LockKey(pub String);
 
 impl Display for LockKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl From<PackageKey> for LockKey {
+    fn from(value: PackageKey) -> Self {
+        LockKey(value.0)
     }
 }
 

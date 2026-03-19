@@ -1,14 +1,16 @@
+use std::collections::btree_map::Entry;
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 
 use crate::commands::ManifestResult;
+use crate::lockfile::LockKey;
 use crate::package::Package;
 
 const MANIFEST_FILE: &str = "bento.toml";
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Manifest {
     pub project: ProjectMetadata,
     pub packages: BTreeMap<PackageKey, PackageSpec>,
@@ -65,7 +67,10 @@ impl Manifest {
                     added.push(package);
                 }
                 Err(e) => {
-                    failed.push((package, e));
+                    failed.push((
+                        package,
+                        anyhow!("Failed to convert package to manifest format: {e}"),
+                    ));
                 }
             }
         }
@@ -74,6 +79,21 @@ impl Manifest {
             (added, None)
         } else {
             (added, Some(failed))
+        }
+    }
+
+    pub fn remove_package(&mut self, key: PackageKey, version: PackageSpec) -> Result<LockKey> {
+        let deps = &mut self.packages;
+
+        match deps.entry(key) {
+            Entry::Occupied(entry) => {
+                let key = match version {
+                    PackageSpec::Version(v) => LockKey(format!("{}@{}", entry.key(), v)),
+                };
+                entry.remove();
+                Ok(key)
+            }
+            Entry::Vacant(entry) => bail!("Package {} not found in manifest", entry.into_key()),
         }
     }
 }
@@ -92,6 +112,12 @@ pub struct PackageKey(pub String);
 impl Display for PackageKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl From<LockKey> for PackageKey {
+    fn from(value: LockKey) -> Self {
+        PackageKey(value.0)
     }
 }
 
