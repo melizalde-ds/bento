@@ -82,16 +82,21 @@ impl Manifest {
         }
     }
 
-    pub fn remove_package(&mut self, key: PackageKey, version: PackageSpec) -> Result<LockKey> {
+    pub fn remove_package(&mut self, key: PackageKey) -> Result<LockKey> {
         let deps = &mut self.packages;
 
         match deps.entry(key) {
             Entry::Occupied(entry) => {
-                let key = match version {
-                    PackageSpec::Version(v) => LockKey(format!("{}@{}", entry.key(), v)),
-                };
+                let key = format!(
+                    "{}@{}",
+                    entry.key(),
+                    match entry.get() {
+                        PackageSpec::Version(version) => version.clone(),
+                    }
+                );
                 entry.remove();
-                Ok(key)
+
+                Ok(LockKey(key))
             }
             Entry::Vacant(entry) => bail!("Package {} not found in manifest", entry.into_key()),
         }

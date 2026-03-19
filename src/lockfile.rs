@@ -62,7 +62,7 @@ impl Lockfile {
                 }
             }
             for dep in &details.dependencies {
-                match self.dependencies.entry(LockKey(dep.clone())) {
+                match self.dependencies.entry(dep.clone()) {
                     Entry::Occupied(entry) => {
                         let deps = entry.into_mut();
                         if !deps.contains(&key) {
@@ -85,12 +85,32 @@ impl Lockfile {
 
     pub fn remove_package(&mut self, key: LockKey) -> Result<LockKey> {
         let packages = &mut self.packages;
+        let dependencies = &mut self.dependencies;
 
         match packages.entry(key) {
             Entry::Occupied(entry) => {
-                let res = entry.key().clone();
-                entry.remove();
-                Ok(res)
+                let (key, details) = entry.remove_entry();
+
+                for dep in details.dependencies {
+                    match dependencies.entry(dep) {
+                        Entry::Occupied(mut entry) => {
+                            let list = entry.get_mut();
+                            if list.len() == 1 && list[0] == key {
+                                entry.remove_entry();
+                            } else {
+                                list.retain(|k| k != &key);
+                            }
+                        }
+                        Entry::Vacant(entry) => {
+                            unreachable!(
+                                "Dependency {} not found in lockfile dependencies",
+                                entry.into_key()
+                            );
+                        }
+                    }
+                }
+
+                Ok(key)
             }
             Entry::Vacant(entry) => bail!("Package {} not found in lockfile", entry.into_key()),
         }
@@ -116,5 +136,5 @@ impl From<PackageKey> for LockKey {
 pub struct LockDetails {
     pub source: String,
     pub checksum: String,
-    pub dependencies: Vec<String>,
+    pub dependencies: Vec<LockKey>,
 }

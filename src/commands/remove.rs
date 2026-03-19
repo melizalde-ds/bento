@@ -18,7 +18,7 @@ fn remove_packages(manifest: &mut Manifest, lockfile: &mut Lockfile, packages: &
     let mut errs = vec![];
     for package in packages {
         match package.to_manifest_package() {
-            Ok((key, spec)) => match manifest.remove_package(key, spec) {
+            Ok((key, _)) => match manifest.remove_package(key) {
                 Ok(key) => match lockfile.remove_package(key) {
                     Ok(key) => removed.push(key),
                     Err(_) => errs.push(format!("{:?}", package.extract())),
