@@ -5,9 +5,9 @@ use crate::{
 use anyhow::{Result, bail};
 use std::{collections::BTreeMap, path::Path};
 
-pub fn run(args: cli::Init) -> Result<()> {
+pub fn run(args: &cli::Init) -> Result<()> {
     let project_name = match args.project.as_deref() {
-        None | Some(".") => {
+        None | Some("." | "") => {
             let current_dir = std::env::current_dir()?;
             let dir_name = current_dir.file_name();
             match dir_name {
@@ -34,6 +34,6 @@ fn init_project(project: &str) -> Result<()> {
         packages: BTreeMap::new(),
     };
     manifest.save()?;
-    println!("Initialized new project '{}'", project);
+    println!("Initialized new project '{project}'");
     Ok(())
 }

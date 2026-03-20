@@ -1,13 +1,15 @@
+use std::collections::btree_map::Entry;
 use std::{collections::BTreeMap, fmt::Display, path::Path};
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 
+use crate::commands::PackageResult;
 use crate::package::Package;
 
 const MANIFEST_FILE: &str = "bento.toml";
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Manifest {
     pub project: ProjectMetadata,
     pub packages: BTreeMap<PackageKey, PackageSpec>,
@@ -28,7 +30,9 @@ impl Manifest {
 
     pub fn save(&self) -> Result<()> {
         let content = toml::to_string(self)?;
-        std::fs::write(MANIFEST_FILE, content)?;
+        let tmp = format!("{MANIFEST_FILE}.tmp");
+        std::fs::write(&tmp, &content)?;
+        std::fs::rename(&tmp, MANIFEST_FILE)?;
         Ok(())
     }
 
@@ -52,13 +56,62 @@ impl Manifest {
         }
     }
 
-    pub fn add_packages(&mut self, packages: &[Package]) -> Result<()> {
+    pub fn add_packages<'a>(&'a mut self, packages: &'a [Package]) -> PackageResult<'a> {
         let map = &mut self.packages;
+        let mut added = vec![];
+        let mut failed = vec![];
+
         for package in packages {
-            let (key, spec) = package.to_manifest_package()?;
-            map.insert(key, spec);
+            match package.to_manifest_package() {
+                Ok((key, spec)) => {
+                    match map.entry(key.clone()) {
+                        Entry::Vacant(entry) => {
+                            entry.insert(spec);
+                            added.push(package);
+                        }
+                        Entry::Occupied(_) => {
+                            failed.push((
+                                package,
+                                anyhow!("Package {key} already exists in manifest"),
+                            ));
+                        }
+                    }
+                }
+                Err(e) => {
+                    failed.push((
+                        package,
+                        anyhow!("Failed to convert package to manifest format: {e}"),
+                    ));
+                }
+            }
         }
-        Ok(())
+
+        if failed.is_empty() {
+            (added, None)
+        } else {
+            (added, Some(failed))
+        }
+    }
+
+    pub fn get_version(&self, key: &PackageKey) -> Option<&str> {
+        self.packages.get(key).map(|spec| match spec {
+            PackageSpec::Version(v) => v.as_str(),
+        })
+    }
+
+    pub fn remove_package(&mut self, key: PackageKey) -> Result<(PackageKey, String)> {
+        let map = &mut self.packages;
+
+        match map.entry(key) {
+            Entry::Occupied(entry) => {
+                let version = match entry.get() {
+                    PackageSpec::Version(v) => v.clone(),
+                };
+                let (key, _) = entry.remove_entry();
+                Ok((key, version))
+            }
+            Entry::Vacant(entry) => bail!("Package {} not found in manifest", entry.into_key()),
+        }
     }
 }
 
@@ -70,7 +123,7 @@ pub struct ProjectMetadata {
     pub author: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
+#[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash, Clone)]
 pub struct PackageKey(pub String);
 
 impl Display for PackageKey {
@@ -78,6 +131,7 @@ impl Display for PackageKey {
         write!(f, "{}", self.0)
     }
 }
+
 
 #[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[serde(untagged)]
