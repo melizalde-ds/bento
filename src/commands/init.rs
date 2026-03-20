@@ -7,7 +7,7 @@ use std::{collections::BTreeMap, path::Path};
 
 pub fn run(args: &cli::Init) -> Result<()> {
     let project_name = match args.project.as_deref() {
-        None | Some(".") => {
+        None | Some("." | "") => {
             let current_dir = std::env::current_dir()?;
             let dir_name = current_dir.file_name();
             match dir_name {

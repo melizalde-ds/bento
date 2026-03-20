@@ -4,8 +4,7 @@ use std::{collections::BTreeMap, fmt::Display, path::Path};
 use anyhow::{Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::commands::ManifestResult;
-use crate::lockfile::LockKey;
+use crate::commands::PackageResult;
 use crate::package::Package;
 
 const MANIFEST_FILE: &str = "bento.toml";
@@ -31,7 +30,9 @@ impl Manifest {
 
     pub fn save(&self) -> Result<()> {
         let content = toml::to_string(self)?;
-        std::fs::write(MANIFEST_FILE, content)?;
+        let tmp = format!("{MANIFEST_FILE}.tmp");
+        std::fs::write(&tmp, &content)?;
+        std::fs::rename(&tmp, MANIFEST_FILE)?;
         Ok(())
     }
 
@@ -55,7 +56,7 @@ impl Manifest {
         }
     }
 
-    pub fn add_packages<'a>(&'a mut self, packages: &'a [Package]) -> ManifestResult<'a> {
+    pub fn add_packages<'a>(&'a mut self, packages: &'a [Package]) -> PackageResult<'a> {
         let map = &mut self.packages;
         let mut added = vec![];
         let mut failed = vec![];
@@ -92,21 +93,22 @@ impl Manifest {
         }
     }
 
-    pub fn remove_package(&mut self, key: PackageKey) -> Result<LockKey> {
+    pub fn get_version(&self, key: &PackageKey) -> Option<&str> {
+        self.packages.get(key).map(|spec| match spec {
+            PackageSpec::Version(v) => v.as_str(),
+        })
+    }
+
+    pub fn remove_package(&mut self, key: PackageKey) -> Result<(PackageKey, String)> {
         let map = &mut self.packages;
 
         match map.entry(key) {
             Entry::Occupied(entry) => {
-                let key = format!(
-                    "{}@{}",
-                    entry.key(),
-                    match entry.get() {
-                        PackageSpec::Version(version) => version.clone(),
-                    }
-                );
-                entry.remove();
-
-                Ok(LockKey(key))
+                let version = match entry.get() {
+                    PackageSpec::Version(v) => v.clone(),
+                };
+                let (key, _) = entry.remove_entry();
+                Ok((key, version))
             }
             Entry::Vacant(entry) => bail!("Package {} not found in manifest", entry.into_key()),
         }
@@ -130,11 +132,6 @@ impl Display for PackageKey {
     }
 }
 
-impl From<LockKey> for PackageKey {
-    fn from(value: LockKey) -> Self {
-        PackageKey(value.0)
-    }
-}
 
 #[derive(Debug, Deserialize, Serialize, PartialOrd, Ord, PartialEq, Eq, Hash)]
 #[serde(untagged)]
